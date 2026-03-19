@@ -178,21 +178,34 @@ def restart_services() -> None:
     # Qtile 設定リロード
     result = subprocess.run(
         ["qtile", "cmd-obj", "-o", "cmd", "-f", "reload_config"],
-        capture_output=True, text=True
+        capture_output=True, text=True,
+        timeout=10,
     )
     if result.returncode == 0:
         print("  Qtile: 設定をリロードしました")
     else:
         print(f"  [警告] Qtile リロード失敗: {result.stderr.strip()}")
 
-    # Picom 再起動
+    # Picom 再起動（stdio を切り離して親プロセスのパイプをブロックしないようにする）
     subprocess.run(["pkill", "-x", "picom"], capture_output=True)
-    subprocess.Popen(["picom", "--daemon"])
+    subprocess.Popen(
+        ["picom", "--daemon"],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
     print("  Picom: 再起動しました")
 
     # Dunst 再起動
     subprocess.run(["pkill", "-x", "dunst"], capture_output=True)
-    subprocess.Popen(["dunst"])
+    subprocess.Popen(
+        ["dunst"],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
     print("  Dunst: 再起動しました")
 
 
