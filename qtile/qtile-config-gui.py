@@ -346,6 +346,7 @@ class QtileConfigGUI(QMainWindow):
         self.theme = json.loads(THEME_FILE.read_text())
         self._color_buttons: dict[str, ColorButton] = {}
         self._widgets: dict = {}  # key → spin/checkbox widget
+        self._worker: ApplyWorker | None = None
 
         self.setWindowTitle("Qtile Config")
         self.setMinimumSize(780, 620)
@@ -774,9 +775,11 @@ class QtileConfigGUI(QMainWindow):
         # apply_theme.py を別スレッドで実行
         self._worker = ApplyWorker(APPLY_SCRIPT)
         self._worker.finished.connect(self._on_apply_done)
+        self._worker.finished.connect(self._worker.deleteLater)
         self._worker.start()
 
     def _on_apply_done(self, returncode: int, stderr: str):
+        self._worker = None
         self._apply_btn.setEnabled(True)
         self._apply_btn.setText("保存して適用")
 
