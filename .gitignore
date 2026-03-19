@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Backup files
+*.backup
+*.bak.*
+
+# Nitrogen wallpaper cache (paths are machine-specific)
+nitrogen/bg-saved.cfg

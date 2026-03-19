@@ -1,0 +1,108 @@
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                         Qtile キーバインド チートシート                          ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+【基本操作】
+  Mod = Super (Windowsキー)
+
+【ウィンドウ操作】
+  Mod + h/j/k/l              ウィンドウフォーカス移動 (左/下/上/右)
+  Mod + ← ↓ ↑ →             ウィンドウフォーカス移動 (矢印キー)
+  Mod + Shift + h/j/k/l      ウィンドウ移動
+  Mod + Shift + ← ↓ ↑ →     ウィンドウ移動 (矢印キー)
+  Mod + Ctrl + h/j/k/l       ウィンドウサイズ変更
+  Mod + Ctrl + ← ↓ ↑ →      ウィンドウサイズ変更 (矢印キー)
+  Mod + Shift + q            ウィンドウを閉じる
+  Mod + f                    フルスクリーン切り替え
+  Mod + Shift + Space        フローティング切り替え
+
+【レイアウト】
+  Mod + e                    次のレイアウトに切り替え
+  Mod + b                    分割方向切り替え
+  Mod + v                    分割方向切り替え
+
+【ワークスペース】
+  Mod + 1〜9                 ワークスペース切り替え
+  Mod + Shift + 1〜9         ウィンドウをワークスペースに移動
+  Mod + Tab                  全ワークスペースのプレビュー表示
+
+【マルチモニター】
+  Mod + ,                    前のモニターにフォーカス
+  Mod + .                    次のモニターにフォーカス
+
+【アプリケーション起動】
+  Mod + Return               ターミナル起動
+  Mod + Space                🎯 Qtileメインメニュー（すべての機能）
+  Mod + d                    アプリケーションランチャー (rofi)
+
+【システム】
+  Mod + Shift + c            設定リロード
+  Mod + Shift + e            Qtile終了
+  Mod + Shift + x            スクリーンロック
+  Mod + Shift + p            電源メニュー
+  Mod + ?                    このチートシート表示
+
+【設定ツール】
+  Mod + Ctrl + d             ディスプレイ設定 (arandr)
+  Mod + Ctrl + a             オーディオ設定 (pavucontrol)
+  Mod + Ctrl + w             壁紙設定 (nitrogen)
+
+【スクリーンショット】
+  Print                      選択範囲をスクリーンショット
+  Mod + Print                フルスクリーン
+  Mod + Shift + s            選択範囲をスクリーンショット (Sway風)
+
+【クリップボード】
+  Mod + c                    クリップボード履歴
+
+【スクラッチパッド】
+  Mod + `                    ドロップダウンターミナル
+  Mod + Shift + `            電卓
+  Mod + Ctrl + `             ファイルマネージャー
+
+【メディアキー】
+  XF86AudioRaiseVolume       音量を上げる
+  XF86AudioLowerVolume       音量を下げる
+  XF86AudioMute              ミュート切り替え
+  XF86AudioMicMute           マイクミュート切り替え
+  XF86AudioPlay              再生/一時停止
+  XF86AudioNext              次のトラック
+  XF86AudioPrev              前のトラック
+  XF86MonBrightnessUp        明るさを上げる
+  XF86MonBrightnessDown      明るさを下げる
+
+【カラーテーマ】
+  Catppuccin Mocha を使用
+  - フォーカスボーダー: 紫 (mauve)
+  - 通常ボーダー: ダークグレー
+  - バー背景: ダークブルーグレー
+
+【バーの表示情報】
+  - CPU使用率
+  - メモリ使用量
+  - ネットワーク速度
+  - CPU温度
+  - 音量
+  - 時計
+  - ワークスペース一覧
+
+【自動起動アプリ】
+  - fcitx5 (日本語入力)
+  - nm-applet (ネットワーク)
+  - blueman-applet (Bluetooth)
+  - picom (コンポジター)
+  - dunst (通知)
+  - flameshot (スクリーンショット)
+  - xfce4-power-manager (電源管理)
+  - nitrogen (壁紙復元)
+
+【設定ファイル】
+  ~/.config/qtile/config.py
+
+【ディスプレイ設定】
+  - DP-4: 280Hz (プライマリ、左)
+  - HDMI-0: 60Hz (右)
+
+【オーディオ】
+  - PipeWire使用
+  - 現在の出力: iFi HD USB Audio

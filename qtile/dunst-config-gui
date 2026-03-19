@@ -1,0 +1,5 @@
+#!/bin/bash
+# Dunst GUI Configurator launcher script
+# Uses qtile's pipx environment
+
+exec ~/.local/share/pipx/venvs/qtile/bin/python3 ~/.config/qtile/dunst-gui-config.py "$@"
