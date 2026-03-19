@@ -91,6 +91,9 @@ install_if_missing "qalculate-gtk"
 # Qt関連
 install_if_missing "qt5-style-plugins"
 
+# Qtile Config GUI
+install_if_missing "python3-pyqt6"
+
 echo ""
 log_success "すべてのパッケージがインストールされました！"
 
