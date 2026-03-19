@@ -9,22 +9,23 @@ from libqtile.config import Match
 
 _theme = json.loads((Path(__file__).parent.parent / "theme.json").read_text())
 _cfg = _theme["layout"]
+_wc  = _theme.get("widget_colors", {})
 
 
 def init_layouts(colors):
     """Initialize window layouts"""
     layouts = [
         layout.Columns(
-            border_focus=colors["mauve"],
-            border_focus_stack=colors["lavender"],
-            border_normal=colors["surface0"],
-            border_normal_stack=colors["surface0"],
+            border_focus=colors[_wc.get("border_focus", "mauve")],
+            border_focus_stack=colors[_wc.get("border_focus_stack", "lavender")],
+            border_normal=colors[_wc.get("border_normal", "surface0")],
+            border_normal_stack=colors[_wc.get("border_normal", "surface0")],
             border_width=_cfg["border_width"],
             margin=_cfg["margin"],
         ),
         layout.Max(
-            border_focus=colors["mauve"],
-            border_normal=colors["surface0"],
+            border_focus=colors[_wc.get("border_focus", "mauve")],
+            border_normal=colors[_wc.get("border_normal", "surface0")],
             border_width=_cfg["border_width"],
             margin=_cfg["margin"],
         ),
@@ -42,8 +43,8 @@ def init_layouts(colors):
     ]
 
     floating_layout = layout.Floating(
-        border_focus=colors["mauve"],
-        border_normal=colors["surface0"],
+        border_focus=colors[_wc.get("border_focus", "mauve")],
+        border_normal=colors[_wc.get("border_normal", "surface0")],
         border_width=_cfg["border_width"],
         float_rules=[
             # Run the utility of `xprop` to see the wm class and name of an X client.

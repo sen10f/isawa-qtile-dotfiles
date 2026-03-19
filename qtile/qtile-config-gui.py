@@ -13,8 +13,8 @@ from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QIcon
 from PyQt6.QtWidgets import (
     QApplication, QCheckBox, QColorDialog, QComboBox, QDoubleSpinBox,
-    QFrame, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QMainWindow,
-    QMessageBox, QPushButton, QScrollArea, QSlider, QSpinBox,
+    QFrame, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
+    QMainWindow, QMessageBox, QPushButton, QScrollArea, QSlider, QSpinBox,
     QStatusBar, QTabWidget, QVBoxLayout, QWidget,
 )
 
@@ -269,6 +269,46 @@ class ColorButton(QPushButton):
 
 
 # ---------------------------------------------------------------------------
+# カラー名ドロップダウン + プレビュー（ウィジェット配色用）
+# ---------------------------------------------------------------------------
+
+class ColorComboRow(QWidget):
+    """パレットのカラー名を選ぶドロップダウン + 色プレビュー"""
+
+    def __init__(self, current_name: str, palette: dict, parent=None):
+        super().__init__(parent)
+        h = QHBoxLayout(self)
+        h.setContentsMargins(0, 0, 0, 0)
+        h.setSpacing(6)
+
+        self._palette = palette
+
+        self._preview = QLabel()
+        self._preview.setFixedSize(22, 22)
+        self._update_preview(current_name)
+
+        self._combo = QComboBox()
+        self._combo.addItems(list(palette.keys()))
+        self._combo.setCurrentText(current_name)
+        self._combo.currentTextChanged.connect(self._update_preview)
+
+        h.addWidget(self._preview)
+        h.addWidget(self._combo, stretch=1)
+
+    def _update_preview(self, name: str):
+        hex_val = self._palette.get(name, "#ffffff")
+        self._preview.setStyleSheet(
+            f"background-color:{hex_val};border-radius:3px;border:1px solid #45475a;"
+        )
+
+    def get_value(self) -> str:
+        return self._combo.currentText()
+
+    def set_value(self, name: str):
+        self._combo.setCurrentText(name)
+
+
+# ---------------------------------------------------------------------------
 # スライダー + ラベル（連動）
 # ---------------------------------------------------------------------------
 
@@ -358,6 +398,9 @@ class QtileConfigGUI(QMainWindow):
         self.theme = json.loads(THEME_FILE.read_text())
         self._color_buttons: dict[str, ColorButton] = {}
         self._widgets: dict = {}  # key → spin/checkbox widget
+        self._wc_widgets: dict[str, ColorComboRow] = {}
+        self._app_widgets: dict[str, QLineEdit] = {}
+        self._kb_widgets: dict[str, QLineEdit] = {}
         self._worker: ApplyWorker | None = None
 
         self.setWindowTitle("Qtile Config")
@@ -377,6 +420,8 @@ class QtileConfigGUI(QMainWindow):
         tabs.addTab(self._build_tab_scratchpad(),  "スクラッチパッド")
         tabs.addTab(self._build_tab_picom(),       "Picom エフェクト")
         tabs.addTab(self._build_tab_dunst(),       "通知 (Dunst)")
+        tabs.addTab(self._build_tab_widget_colors(), "ウィジェット配色")
+        tabs.addTab(self._build_tab_apps(),          "アプリ・キーバインド")
         root.addWidget(tabs)
 
         # 下部ボタン
@@ -696,6 +741,136 @@ class QtileConfigGUI(QMainWindow):
         return outer
 
     # -----------------------------------------------------------------------
+    # Tab 6: ウィジェット配色
+    # -----------------------------------------------------------------------
+
+    def _build_tab_widget_colors(self) -> QWidget:
+        outer = QWidget()
+        vbox = QVBoxLayout(outer)
+        vbox.setContentsMargins(12, 12, 12, 12)
+
+        palette   = self.theme["colors"]
+        wc        = self.theme.get("widget_colors", {})
+
+        GROUPS = [
+            ("ウィンドウ・レイアウト", [
+                ("border_focus",               "フォーカス枠"),
+                ("border_focus_stack",         "フォーカス枠（スタック）"),
+                ("border_normal",              "非フォーカス枠"),
+                ("bar_border",                 "バー下ボーダー"),
+            ]),
+            ("ステータスバー ウィジェット", [
+                ("current_layout",   "現在のレイアウト"),
+                ("prompt",           "プロンプト"),
+                ("window_name",      "ウィンドウ名"),
+                ("separator",        "区切り線"),
+                ("media",            "メディアプレイヤー"),
+                ("audio_device",     "オーディオデバイス"),
+                ("volume",           "音量"),
+                ("cpu",              "CPU使用率"),
+                ("clock",            "時計"),
+                ("power_button",     "電源ボタン"),
+            ]),
+            ("グループボックス（ワークスペース）", [
+                ("group_active",               "アクティブ"),
+                ("group_inactive",             "非アクティブ"),
+                ("group_highlight_bg",         "ハイライト背景"),
+                ("group_this_screen",          "現在の画面"),
+                ("group_other_screen",         "他の画面"),
+                ("group_other_current_screen", "他の画面（フォーカス中）"),
+                ("group_other_screen_border",  "他の画面（非フォーカス）"),
+                ("group_urgent",               "緊急"),
+            ]),
+        ]
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        inner = QWidget()
+        scroll.setWidget(inner)
+        ivbox = QVBoxLayout(inner)
+        ivbox.setContentsMargins(4, 4, 4, 4)
+
+        for group_name, items in GROUPS:
+            box = QGroupBox(group_name)
+            g = QGridLayout(box)
+            g.setColumnStretch(1, 1)
+            for row, (key, label) in enumerate(items):
+                current = wc.get(key, "base")
+                combo_row = ColorComboRow(current, palette)
+                self._wc_widgets[key] = combo_row
+                g.addWidget(QLabel(label), row, 0)
+                g.addWidget(combo_row,     row, 1)
+            ivbox.addWidget(box)
+
+        ivbox.addStretch()
+        vbox.addWidget(scroll)
+        return outer
+
+    # -----------------------------------------------------------------------
+    # Tab 7: アプリ・キーバインド
+    # -----------------------------------------------------------------------
+
+    def _build_tab_apps(self) -> QWidget:
+        outer = QWidget()
+        vbox = QVBoxLayout(outer)
+        vbox.setContentsMargins(12, 12, 12, 12)
+        vbox.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        apps = self.theme.get("apps", {})
+        kb   = self.theme.get("keybindings", {})
+
+        # アプリケーション
+        app_box = QGroupBox("アプリケーション")
+        ag = QGridLayout(app_box)
+        ag.setColumnStretch(1, 1)
+
+        APP_ITEMS = [
+            ("terminal", "ターミナル",        "空白で自動検出（alacritty / kitty 等）"),
+            ("browser",  "ブラウザ",          "例: firefox, chromium"),
+            ("editor",   "テキストエディタ",  "例: code, gedit, nvim"),
+        ]
+        for row, (key, label, placeholder) in enumerate(APP_ITEMS):
+            le = QLineEdit(apps.get(key, ""))
+            le.setPlaceholderText(placeholder)
+            self._app_widgets[key] = le
+            ag.addWidget(QLabel(label), row, 0)
+            ag.addWidget(le,            row, 1)
+        vbox.addWidget(app_box)
+
+        # キー割り当て（Modキーは固定、末尾のキーのみ変更可能）
+        kb_box = QGroupBox("キー割り当て  ※ Mod = Super/Windowsキー")
+        kg = QGridLayout(kb_box)
+        kg.setColumnStretch(2, 1)
+
+        KB_ITEMS = [
+            ("launcher_key",      "Mod +",       "ランチャー (rofi)",    "d"),
+            ("browser_key",       "Mod +",       "ブラウザ",             "w"),
+            ("lock_key",          "Mod+Shift +", "画面ロック",           "x"),
+            ("power_menu_key",    "Mod+Shift +", "電源メニュー",         "p"),
+            ("close_window_key",  "Mod+Shift +", "ウィンドウを閉じる",   "q"),
+            ("reload_config_key", "Mod+Shift +", "設定リロード",         "c"),
+        ]
+        for row, (key, mod_label, desc, default) in enumerate(KB_ITEMS):
+            mod_lbl = QLabel(mod_label)
+            mod_lbl.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            mod_lbl.setStyleSheet("color:#a6adc8;")
+            le = QLineEdit(kb.get(key, default))
+            le.setFixedWidth(80)
+            le.setPlaceholderText(default)
+            self._kb_widgets[key] = le
+            kg.addWidget(QLabel(desc), row, 0)
+            kg.addWidget(mod_lbl,      row, 1)
+            kg.addWidget(le,           row, 2)
+        vbox.addWidget(kb_box)
+
+        note = QLabel("※ キーには英数字1文字または Return / space / Tab などを入力してください")
+        note.setStyleSheet("color:#6c7086; font-size:11px;")
+        note.setWordWrap(True)
+        vbox.addWidget(note)
+        vbox.addStretch()
+        return outer
+
+    # -----------------------------------------------------------------------
     # 下部ボタンバー
     # -----------------------------------------------------------------------
 
@@ -767,6 +942,24 @@ class QtileConfigGUI(QMainWindow):
                     theme[parts[1]] = val
                 elif parts[0] == "picom":
                     theme["picom"][parts[1]] = val
+
+        # ウィジェット配色
+        if "widget_colors" not in theme:
+            theme["widget_colors"] = {}
+        for key, combo_row in self._wc_widgets.items():
+            theme["widget_colors"][key] = combo_row.get_value()
+
+        # アプリ
+        if "apps" not in theme:
+            theme["apps"] = {}
+        for key, le in self._app_widgets.items():
+            theme["apps"][key] = le.text().strip()
+
+        # キーバインド
+        if "keybindings" not in theme:
+            theme["keybindings"] = {}
+        for key, le in self._kb_widgets.items():
+            theme["keybindings"][key] = le.text().strip()
 
         return theme
 
@@ -846,6 +1039,18 @@ class QtileConfigGUI(QMainWindow):
                             widget.setValue(self.theme["dunst"][parts[1]])
                         else:
                             widget.setValue(self.theme["dunst"][parts[1]][parts[2]])
+            # ウィジェット配色リセット
+            for key, combo_row in self._wc_widgets.items():
+                combo_row.set_value(self.theme.get("widget_colors", {}).get(key, "base"))
+
+            # アプリリセット
+            for key, le in self._app_widgets.items():
+                le.setText(self.theme.get("apps", {}).get(key, ""))
+
+            # キーバインドリセット
+            for key, le in self._kb_widgets.items():
+                le.setText(self.theme.get("keybindings", {}).get(key, ""))
+
             self.status.showMessage("リセットしました")
 
 

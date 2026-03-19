@@ -10,6 +10,7 @@ from settings.audio_device import AudioDeviceSelector
 
 _theme = json.loads((Path(__file__).parent.parent / "theme.json").read_text())
 _bar_cfg = _theme["bar"]
+_wc     = _theme.get("widget_colors", {})
 
 
 def init_widgets(colors):
@@ -30,18 +31,18 @@ def create_bar(colors, primary=True, go_to_group_func=None):
 
     # Create GroupBox configuration
     groupbox_config = {
-        "active": colors["text"],
-        "inactive": colors["surface1"],
-        "highlight_method": "line",
-        "highlight_color": colors["base"],
-        "this_current_screen_border": colors["mauve"],
-        "this_screen_border": colors["blue"],
-        "other_current_screen_border": colors["pink"],
-        "other_screen_border": colors["surface2"],
-        "urgent_alert_method": "line",
-        "urgent_border": colors["red"],
-        "disable_drag": True,
-        "padding": 5,
+        "active":                      colors[_wc.get("group_active",               "text")],
+        "inactive":                    colors[_wc.get("group_inactive",             "surface1")],
+        "highlight_method":            "line",
+        "highlight_color":             colors[_wc.get("group_highlight_bg",         "base")],
+        "this_current_screen_border":  colors[_wc.get("group_this_screen",          "mauve")],
+        "this_screen_border":          colors[_wc.get("group_other_screen",         "blue")],
+        "other_current_screen_border": colors[_wc.get("group_other_current_screen", "pink")],
+        "other_screen_border":         colors[_wc.get("group_other_screen_border",  "surface2")],
+        "urgent_alert_method":         "line",
+        "urgent_border":               colors[_wc.get("group_urgent",               "red")],
+        "disable_drag":                True,
+        "padding":                     5,
     }
 
     # If custom go_to_group function provided, use it for clicks
@@ -58,16 +59,16 @@ def create_bar(colors, primary=True, go_to_group_func=None):
 
     widgets = [
         widget.CurrentLayout(
-            foreground=colors["mauve"],
+            foreground=colors[_wc.get("current_layout", "mauve")],
             padding=10,
         ),
         widget.GroupBox(**groupbox_config),
         widget.Prompt(
-            foreground=colors["green"],
+            foreground=colors[_wc.get("prompt", "green")],
             prompt="run: ",
         ),
         widget.WindowName(
-            foreground=colors["lavender"],
+            foreground=colors[_wc.get("window_name", "lavender")],
             max_chars=50,
         ),
         widget.Chord(
@@ -79,7 +80,7 @@ def create_bar(colors, primary=True, go_to_group_func=None):
         widget.Sep(
             linewidth=1,
             padding=10,
-            foreground=colors["surface0"],
+            foreground=colors[_wc.get("separator", "surface0")],
         ),
         widget.Mpris2(
             name="mpris",
@@ -89,7 +90,7 @@ def create_bar(colors, primary=True, go_to_group_func=None):
             scroll_interval=0.5,
             scroll_wait_intervals=4,
             stop_pause_text="⏹ No media playing",
-            foreground=colors["peach"],
+            foreground=colors[_wc.get("media", "peach")],
             padding=5,
         ),
     ]
@@ -99,20 +100,20 @@ def create_bar(colors, primary=True, go_to_group_func=None):
         widget.Sep(
             linewidth=1,
             padding=10,
-            foreground=colors["surface0"],
+            foreground=colors[_wc.get("separator", "surface0")],
         ),
         AudioDeviceSelector(
-            foreground=colors["green"],
+            foreground=colors[_wc.get("audio_device", "green")],
             update_interval=2,
             max_chars=25,
         ),
         widget.Sep(
             linewidth=1,
             padding=10,
-            foreground=colors["surface0"],
+            foreground=colors[_wc.get("separator", "surface0")],
         ),
         widget.Volume(
-            foreground=colors["mauve"],
+            foreground=colors[_wc.get("volume", "mauve")],
             fmt=" {}",
             padding=5,
         ),
@@ -123,7 +124,7 @@ def create_bar(colors, primary=True, go_to_group_func=None):
             -1,
             widget.CPU(
                 format=" {load_percent}%",
-                foreground=colors["green"],
+                foreground=colors[_wc.get("cpu", "green")],
                 padding=5,
             ),
         )
@@ -144,12 +145,12 @@ def create_bar(colors, primary=True, go_to_group_func=None):
     widgets.extend([
         widget.Clock(
             format="%Y-%m-%d %a %I:%M %p",
-            foreground=colors["blue"],
+            foreground=colors[_wc.get("clock", "blue")],
             padding=10,
         ),
         widget.TextBox(
             text="⏻",
-            foreground=colors["red"],
+            foreground=colors[_wc.get("power_button", "red")],
             fontsize=16,
             padding=10,
             mouse_callbacks={
@@ -163,5 +164,5 @@ def create_bar(colors, primary=True, go_to_group_func=None):
         _bar_cfg["height"],
         background=colors["base"],
         border_width=[0, 0, _bar_cfg["border_bottom"], 0],
-        border_color=colors["mauve"],
+        border_color=colors[_wc.get("bar_border", "mauve")],
     )

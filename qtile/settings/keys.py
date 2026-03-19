@@ -2,9 +2,15 @@
 Keyboard shortcuts configuration
 """
 
+import json
 import os
+from pathlib import Path
 from libqtile.config import Key
 from libqtile.lazy import lazy
+
+_theme = json.loads((Path(__file__).parent.parent / "theme.json").read_text())
+_apps  = _theme.get("apps", {})
+_kb    = _theme.get("keybindings", {})
 
 
 def init_keys(mod, terminal, go_to_group, groups):
@@ -32,19 +38,19 @@ def init_keys(mod, terminal, go_to_group, groups):
         Key([mod, "shift"], "l", lazy.layout.shuffle_right(), desc="Move window to the right"),
 
         # Terminal (Sway: Mod+Return)
-        Key([mod], "Return", lazy.spawn(terminal), desc="Launch terminal"),
+        Key([mod], _kb.get("terminal_key", "Return"), lazy.spawn(terminal), desc="Launch terminal"),
 
         # Kill focused window (Sway: Mod+Shift+q)
-        Key([mod, "shift"], "q", lazy.window.kill(), desc="Kill focused window"),
+        Key([mod, "shift"], _kb.get("close_window_key", "q"), lazy.window.kill(), desc="Kill focused window"),
 
         # Reload config (Sway: Mod+Shift+c)
-        Key([mod, "shift"], "c", lazy.reload_config(), desc="Reload the config"),
+        Key([mod, "shift"], _kb.get("reload_config_key", "c"), lazy.reload_config(), desc="Reload the config"),
 
         # Exit (Sway: Mod+Shift+e)
         Key([mod, "shift"], "e", lazy.shutdown(), desc="Exit Qtile"),
 
         # Application launcher (Sway: Mod+d for dmenu/rofi)
-        Key([mod], "d", lazy.spawn("rofi -show drun"), desc="Launch application launcher"),
+        Key([mod], _kb.get("launcher_key", "d"), lazy.spawn("rofi -show drun"), desc="Launch application launcher"),
 
         # Qtile メインメニュー - すべての機能にアクセス
         Key([mod], "space", lazy.spawn(os.path.expanduser("~/.config/qtile/qtile-menu.sh")), desc="Show Qtile menu"),
@@ -120,13 +126,17 @@ def init_keys(mod, terminal, go_to_group, groups):
         Key([mod, "shift"], "s", lazy.spawn("sh -c 'import png:- | tee ~/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png | xclip -selection clipboard -t image/png'"), desc="Screenshot selection (Sway-like)"),
 
         # Screen lock
-        Key([mod, "shift"], "x", lazy.spawn("i3lock -c 000000"), desc="Lock screen"),
+        Key([mod, "shift"], _kb.get("lock_key", "x"), lazy.spawn("i3lock -c 000000"), desc="Lock screen"),
 
         # System power menu
-        Key([mod, "shift"], "p", lazy.spawn("rofi -show power-menu -modi power-menu:~/.local/bin/rofi-power-menu"), desc="Power menu"),
+        Key([mod, "shift"], _kb.get("power_menu_key", "p"), lazy.spawn("rofi -show power-menu -modi power-menu:~/.local/bin/rofi-power-menu"), desc="Power menu"),
 
         # Clipboard manager
         Key([mod], "c", lazy.spawn("copyq show"), desc="Clipboard history"),
+
+        # Browser (theme.json の apps.browser が設定されている場合)
+        *([Key([mod], _kb.get("browser_key", "w"), lazy.spawn(_apps["browser"]), desc="Launch browser")]
+          if _apps.get("browser") else []),
 
         # Cheatsheet
         Key([mod], "slash", lazy.spawn(terminal + " -e less " + os.path.expanduser("~/.config/qtile/cheatsheet.txt")), desc="Show cheatsheet"),
