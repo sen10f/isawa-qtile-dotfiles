@@ -10,3 +10,6 @@ __pycache__/
 
 # Nitrogen wallpaper cache (paths are machine-specific)
 nitrogen/bg-saved.cfg
+
+# Development docs
+qtile/AGENTS.md
