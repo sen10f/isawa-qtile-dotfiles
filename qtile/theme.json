@@ -1,0 +1,88 @@
+{
+  "colors": {
+    "rosewater": "#f5e0dc",
+    "flamingo":  "#f2cdcd",
+    "pink":      "#f5c2e7",
+    "mauve":     "#cba6f7",
+    "red":       "#f38ba8",
+    "maroon":    "#eba0ac",
+    "peach":     "#fab387",
+    "yellow":    "#f9e2af",
+    "green":     "#a6e3a1",
+    "teal":      "#94e2d5",
+    "sky":       "#89dceb",
+    "sapphire":  "#74c7ec",
+    "blue":      "#89b4fa",
+    "lavender":  "#b4befe",
+    "text":      "#cdd6f4",
+    "subtext1":  "#bac2de",
+    "subtext0":  "#a6adc8",
+    "overlay2":  "#9399b2",
+    "overlay1":  "#7f849c",
+    "overlay0":  "#6c7086",
+    "surface2":  "#585b70",
+    "surface1":  "#45475a",
+    "surface0":  "#313244",
+    "base":      "#1e1e2e",
+    "mantle":    "#181825",
+    "crust":     "#11111b"
+  },
+  "layout": {
+    "border_width": 2,
+    "margin": 8
+  },
+  "bar": {
+    "height": 28,
+    "fontsize": 12,
+    "padding": 3,
+    "border_bottom": 2
+  },
+  "scratchpad": {
+    "term":  { "width": 0.8, "height": 0.8, "x": 0.1,  "y": 0.1,  "opacity": 0.95 },
+    "calc":  { "width": 0.4, "height": 0.6, "x": 0.3,  "y": 0.2,  "opacity": 0.95 },
+    "files": { "width": 0.6, "height": 0.7, "x": 0.2,  "y": 0.15, "opacity": 0.95 }
+  },
+  "picom": {
+    "shadow_radius": 12,
+    "shadow_opacity": 0.75,
+    "shadow_offset_x": -12,
+    "shadow_offset_y": -12,
+    "fade_in_step": 0.03,
+    "fade_out_step": 0.03,
+    "fade_delta": 5,
+    "inactive_opacity": 1.0,
+    "blur_strength": 5,
+    "blur_background": false
+  },
+  "dunst": {
+    "corner_radius": 10,
+    "padding": 12,
+    "horizontal_padding": 12,
+    "frame_width": 2,
+    "frame_color": "#cba6f7",
+    "font": "monospace 10",
+    "urgency_low": {
+      "background":  "#1c1b26",
+      "foreground":  "#cdd6f4",
+      "frame_color": "#89b4fa",
+      "timeout": 5
+    },
+    "urgency_normal": {
+      "background":  "#131323",
+      "foreground":  "#cdd6f4",
+      "frame_color": "#fab387",
+      "timeout": 8
+    },
+    "urgency_critical": {
+      "background":  "#1e1e2e",
+      "foreground":  "#cdd6f4",
+      "frame_color": "#f38ba8",
+      "timeout": 0
+    }
+  },
+  "rofi": {
+    "window_width": "40%",
+    "window_border_radius": "8px",
+    "listview_lines": 8
+  }
+}

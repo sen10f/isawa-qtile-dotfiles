@@ -2,17 +2,22 @@
 Bar and widgets configuration
 """
 
+import json
 import subprocess
+from pathlib import Path
 from libqtile import bar, widget
 from settings.audio_device import AudioDeviceSelector
+
+_theme = json.loads((Path(__file__).parent.parent / "theme.json").read_text())
+_bar_cfg = _theme["bar"]
 
 
 def init_widgets(colors):
     """Initialize widgets for the bar"""
     widget_defaults = dict(
         font="sans",
-        fontsize=12,
-        padding=3,
+        fontsize=_bar_cfg["fontsize"],
+        padding=_bar_cfg["padding"],
         background=colors["base"],
         foreground=colors["text"],
     )
@@ -155,8 +160,8 @@ def create_bar(colors, primary=True, go_to_group_func=None):
 
     return bar.Bar(
         widgets,
-        28,
+        _bar_cfg["height"],
         background=colors["base"],
-        border_width=[0, 0, 2, 0],
+        border_width=[0, 0, _bar_cfg["border_bottom"], 0],
         border_color=colors["mauve"],
     )

@@ -2,8 +2,13 @@
 Workspace and Scratchpad configuration
 """
 
+import json
+from pathlib import Path
 from libqtile.config import Group, ScratchPad, DropDown
 from libqtile.lazy import lazy
+
+_theme = json.loads((Path(__file__).parent.parent / "theme.json").read_text())
+_sc = _theme["scratchpad"]
 
 
 def init_groups(terminal):
@@ -127,31 +132,31 @@ def init_groups(terminal):
             DropDown(
                 "term",
                 terminal,
-                width=0.8,
-                height=0.8,
-                x=0.1,
-                y=0.1,
-                opacity=0.95,
+                width=_sc["term"]["width"],
+                height=_sc["term"]["height"],
+                x=_sc["term"]["x"],
+                y=_sc["term"]["y"],
+                opacity=_sc["term"]["opacity"],
             ),
             # Calculator
             DropDown(
                 "calc",
                 "qalculate-gtk",
-                width=0.4,
-                height=0.6,
-                x=0.3,
-                y=0.2,
-                opacity=0.95,
+                width=_sc["calc"]["width"],
+                height=_sc["calc"]["height"],
+                x=_sc["calc"]["x"],
+                y=_sc["calc"]["y"],
+                opacity=_sc["calc"]["opacity"],
             ),
             # File manager
             DropDown(
                 "files",
                 "nautilus",
-                width=0.6,
-                height=0.7,
-                x=0.2,
-                y=0.15,
-                opacity=0.95,
+                width=_sc["files"]["width"],
+                height=_sc["files"]["height"],
+                x=_sc["files"]["x"],
+                y=_sc["files"]["y"],
+                opacity=_sc["files"]["opacity"],
             ),
         ])
     )

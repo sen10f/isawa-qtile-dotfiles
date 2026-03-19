@@ -2,8 +2,13 @@
 Window layouts configuration
 """
 
+import json
+from pathlib import Path
 from libqtile import layout
 from libqtile.config import Match
+
+_theme = json.loads((Path(__file__).parent.parent / "theme.json").read_text())
+_cfg = _theme["layout"]
 
 
 def init_layouts(colors):
@@ -14,14 +19,14 @@ def init_layouts(colors):
             border_focus_stack=colors["lavender"],
             border_normal=colors["surface0"],
             border_normal_stack=colors["surface0"],
-            border_width=2,
-            margin=8,
+            border_width=_cfg["border_width"],
+            margin=_cfg["margin"],
         ),
         layout.Max(
             border_focus=colors["mauve"],
             border_normal=colors["surface0"],
-            border_width=2,
-            margin=8,
+            border_width=_cfg["border_width"],
+            margin=_cfg["margin"],
         ),
         # Try more layouts by unleashing below layouts.
         # layout.Stack(num_stacks=2),
@@ -39,7 +44,7 @@ def init_layouts(colors):
     floating_layout = layout.Floating(
         border_focus=colors["mauve"],
         border_normal=colors["surface0"],
-        border_width=2,
+        border_width=_cfg["border_width"],
         float_rules=[
             # Run the utility of `xprop` to see the wm class and name of an X client.
             *layout.Floating.default_float_rules,
