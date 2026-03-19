@@ -322,16 +322,22 @@ class ApplyWorker(QThread):
         self._script = script
 
     def run(self):
+        print("[ApplyWorker] スレッド開始", flush=True)
         try:
             result = subprocess.run(
                 [sys.executable, str(self._script)],
                 capture_output=True, text=True,
                 timeout=60
             )
+            print(f"[ApplyWorker] 完了 returncode={result.returncode}", flush=True)
+            if result.stderr:
+                print(f"[ApplyWorker] stderr: {result.stderr}", flush=True)
             self.finished.emit(result.returncode, result.stderr)
         except subprocess.TimeoutExpired:
+            print("[ApplyWorker] タイムアウト", flush=True)
             self.finished.emit(1, "タイムアウト: apply_theme.py が60秒以内に完了しませんでした")
         except Exception as e:
+            print(f"[ApplyWorker] 例外: {e}", flush=True)
             self.finished.emit(1, str(e))
 
 
@@ -781,10 +787,11 @@ class QtileConfigGUI(QMainWindow):
         # apply_theme.py を別スレッドで実行
         self._worker = ApplyWorker(APPLY_SCRIPT)
         self._worker.finished.connect(self._on_apply_done)
-        self._worker.finished.connect(self._worker.deleteLater)
         self._worker.start()
 
     def _on_apply_done(self, returncode: int, stderr: str):
+        print(f"[_on_apply_done] 呼ばれました returncode={returncode}", flush=True)
+        self._worker.wait()  # スレッドの完全停止を待ってから解放
         self._worker = None
         self._apply_btn.setEnabled(True)
         self._apply_btn.setText("保存して適用")
