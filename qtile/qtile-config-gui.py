@@ -322,11 +322,17 @@ class ApplyWorker(QThread):
         self._script = script
 
     def run(self):
-        result = subprocess.run(
-            [sys.executable, str(self._script)],
-            capture_output=True, text=True
-        )
-        self.finished.emit(result.returncode, result.stderr)
+        try:
+            result = subprocess.run(
+                [sys.executable, str(self._script)],
+                capture_output=True, text=True,
+                timeout=60
+            )
+            self.finished.emit(result.returncode, result.stderr)
+        except subprocess.TimeoutExpired:
+            self.finished.emit(1, "タイムアウト: apply_theme.py が60秒以内に完了しませんでした")
+        except Exception as e:
+            self.finished.emit(1, str(e))
 
 
 def make_separator():
@@ -786,11 +792,12 @@ class QtileConfigGUI(QMainWindow):
         if returncode == 0:
             self.status.showMessage("適用完了！")
         else:
+            error_msg = stderr.strip() or "不明なエラー（終了コード: {returncode}）"
             QMessageBox.warning(
                 self, "適用エラー",
-                f"apply_theme.py でエラーが発生しました:\n{stderr}"
+                f"apply_theme.py でエラーが発生しました:\n{error_msg}"
             )
-            self.status.showMessage("エラーが発生しました")
+            self.status.showMessage(f"エラー (code={returncode})")
 
     def _on_reset(self):
         reply = QMessageBox.question(
