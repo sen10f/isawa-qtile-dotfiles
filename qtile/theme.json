@@ -110,40 +110,174 @@
   "auto_fullscreen": false,
   "auto_minimize": false,
   "widget_colors": {
-    "border_focus":               "mauve",
-    "border_focus_stack":         "lavender",
-    "border_normal":              "surface0",
-    "bar_border":                 "mauve",
-    "current_layout":             "mauve",
-    "prompt":                     "green",
-    "window_name":                "lavender",
-    "separator":                  "surface0",
-    "media":                      "peach",
-    "audio_device":               "green",
-    "volume":                     "mauve",
-    "cpu":                        "green",
-    "clock":                      "blue",
-    "power_button":               "red",
-    "group_active":               "text",
-    "group_inactive":             "surface1",
-    "group_highlight_bg":         "base",
-    "group_this_screen":          "mauve",
-    "group_other_screen":         "blue",
+    "border_focus": "mauve",
+    "border_focus_stack": "lavender",
+    "border_normal": "surface0",
+    "bar_border": "mauve",
+    "current_layout": "mauve",
+    "prompt": "green",
+    "window_name": "lavender",
+    "separator": "surface0",
+    "media": "peach",
+    "audio_device": "green",
+    "volume": "mauve",
+    "cpu": "flamingo",
+    "clock": "sky",
+    "power_button": "red",
+    "group_active": "text",
+    "group_inactive": "surface1",
+    "group_highlight_bg": "base",
+    "group_this_screen": "mauve",
+    "group_other_screen": "blue",
     "group_other_current_screen": "pink",
-    "group_other_screen_border":  "surface2",
-    "group_urgent":               "red"
+    "group_other_screen_border": "surface2",
+    "group_urgent": "red"
   },
   "apps": {
-    "terminal":     "",
-    "browser":      "firefox",
-    "editor":       ""
+    "terminal": "",
+    "browser": "firefox",
+    "editor": ""
   },
   "keybindings": {
-    "launcher_key":      "d",
-    "browser_key":       "w",
-    "lock_key":          "x",
-    "power_menu_key":    "p",
-    "close_window_key":  "q",
-    "reload_config_key": "c"
+    "terminal": {
+      "mods": [
+        "mod"
+      ],
+      "key": "Return"
+    },
+    "launcher": {
+      "mods": [
+        "mod"
+      ],
+      "key": "d"
+    },
+    "browser": {
+      "mods": [
+        "mod"
+      ],
+      "key": "w"
+    },
+    "menu": {
+      "mods": [
+        "mod"
+      ],
+      "key": "space"
+    },
+    "workspace_preview": {
+      "mods": [
+        "mod"
+      ],
+      "key": "Tab"
+    },
+    "close_window": {
+      "mods": [
+        "mod",
+        "shift"
+      ],
+      "key": "q"
+    },
+    "toggle_floating": {
+      "mods": [
+        "mod",
+        "shift"
+      ],
+      "key": "space"
+    },
+    "toggle_fullscreen": {
+      "mods": [
+        "mod"
+      ],
+      "key": "f"
+    },
+    "next_layout": {
+      "mods": [
+        "mod"
+      ],
+      "key": "e"
+    },
+    "reload_config": {
+      "mods": [
+        "mod",
+        "shift"
+      ],
+      "key": "c"
+    },
+    "lock_screen": {
+      "mods": [
+        "mod",
+        "shift"
+      ],
+      "key": "x"
+    },
+    "power_menu": {
+      "mods": [
+        "mod",
+        "shift"
+      ],
+      "key": "p"
+    },
+    "screenshot_select": {
+      "mods": [],
+      "key": "Print"
+    },
+    "screenshot_full": {
+      "mods": [
+        "mod"
+      ],
+      "key": "Print"
+    },
+    "clipboard": {
+      "mods": [
+        "mod"
+      ],
+      "key": "c"
+    },
+    "display": {
+      "mods": [
+        "mod",
+        "control"
+      ],
+      "key": "d"
+    },
+    "wallpaper": {
+      "mods": [
+        "mod",
+        "control"
+      ],
+      "key": "w"
+    },
+    "audio": {
+      "mods": [
+        "mod",
+        "control"
+      ],
+      "key": "a"
+    },
+    "cheatsheet": {
+      "mods": [
+        "mod"
+      ],
+      "key": "slash"
+    },
+    "scratchpad_term": {
+      "mods": [
+        "mod"
+      ],
+      "key": "grave"
+    },
+    "scratchpad_calc": {
+      "mods": [
+        "mod",
+        "shift"
+      ],
+      "key": "grave"
+    },
+    "scratchpad_files": {
+      "mods": [
+        "mod",
+        "control"
+      ],
+      "key": "grave"
+    }
   }
 }

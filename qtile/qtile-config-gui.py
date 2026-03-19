@@ -309,6 +309,67 @@ class ColorComboRow(QWidget):
 
 
 # ---------------------------------------------------------------------------
+# キーバインド行ウィジェット
+# ---------------------------------------------------------------------------
+
+class KeyBindingRow(QWidget):
+    """修飾キードロップダウン + キー入力フィールド"""
+
+    MOD_OPTIONS = [
+        ("なし",             []),
+        ("Mod",              ["mod"]),
+        ("Mod+Shift",        ["mod", "shift"]),
+        ("Mod+Ctrl",         ["mod", "control"]),
+        ("Mod+Shift+Ctrl",   ["mod", "shift", "control"]),
+    ]
+
+    def __init__(self, current: dict, parent=None):
+        super().__init__(parent)
+        h = QHBoxLayout(self)
+        h.setContentsMargins(0, 0, 0, 0)
+        h.setSpacing(6)
+
+        self._mod_combo = QComboBox()
+        for label, _ in self.MOD_OPTIONS:
+            self._mod_combo.addItem(label)
+        self._mod_combo.setFixedWidth(140)
+
+        self._key_edit = QLineEdit()
+        self._key_edit.setFixedWidth(90)
+        self._key_edit.setPlaceholderText("キー")
+
+        plus_label = QLabel("+")
+        plus_label.setStyleSheet("color:#a6adc8;")
+
+        h.addWidget(self._mod_combo)
+        h.addWidget(plus_label)
+        h.addWidget(self._key_edit)
+        h.addStretch()
+
+        self.set_value(current)
+
+    def _find_mod_index(self, mods: list) -> int:
+        for i, (_, m) in enumerate(self.MOD_OPTIONS):
+            if m == mods:
+                return i
+        return 0
+
+    def set_value(self, entry: dict):
+        if not isinstance(entry, dict):
+            entry = {}
+        mods = entry.get("mods", [])
+        key  = entry.get("key", "")
+        self._mod_combo.setCurrentIndex(self._find_mod_index(mods))
+        self._key_edit.setText(key)
+
+    def get_value(self) -> dict:
+        idx  = self._mod_combo.currentIndex()
+        mods = self.MOD_OPTIONS[idx][1]
+        key  = self._key_edit.text().strip()
+        return {"mods": mods, "key": key}
+
+
+# ---------------------------------------------------------------------------
 # スライダー + ラベル（連動）
 # ---------------------------------------------------------------------------
 
@@ -400,7 +461,7 @@ class QtileConfigGUI(QMainWindow):
         self._widgets: dict = {}  # key → spin/checkbox widget
         self._wc_widgets: dict[str, ColorComboRow] = {}
         self._app_widgets: dict[str, QLineEdit] = {}
-        self._kb_widgets: dict[str, QLineEdit] = {}
+        self._kb_widgets: dict[str, KeyBindingRow] = {}
         self._worker: ApplyWorker | None = None
 
         self.setWindowTitle("Qtile Config")
@@ -812,22 +873,29 @@ class QtileConfigGUI(QMainWindow):
 
     def _build_tab_apps(self) -> QWidget:
         outer = QWidget()
-        vbox = QVBoxLayout(outer)
-        vbox.setContentsMargins(12, 12, 12, 12)
+        outer_vbox = QVBoxLayout(outer)
+        outer_vbox.setContentsMargins(12, 12, 12, 12)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        inner = QWidget()
+        scroll.setWidget(inner)
+        vbox = QVBoxLayout(inner)
+        vbox.setContentsMargins(4, 4, 4, 4)
         vbox.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         apps = self.theme.get("apps", {})
         kb   = self.theme.get("keybindings", {})
 
-        # アプリケーション
+        # ── アプリケーション ─────────────────────────────────────────────
         app_box = QGroupBox("アプリケーション")
         ag = QGridLayout(app_box)
         ag.setColumnStretch(1, 1)
 
         APP_ITEMS = [
-            ("terminal", "ターミナル",        "空白で自動検出（alacritty / kitty 等）"),
-            ("browser",  "ブラウザ",          "例: firefox, chromium"),
-            ("editor",   "テキストエディタ",  "例: code, gedit, nvim"),
+            ("terminal", "ターミナル",       "空白で自動検出（alacritty / kitty 等）"),
+            ("browser",  "ブラウザ",         "例: firefox, chromium"),
+            ("editor",   "テキストエディタ", "例: code, gedit, nvim"),
         ]
         for row, (key, label, placeholder) in enumerate(APP_ITEMS):
             le = QLineEdit(apps.get(key, ""))
@@ -837,37 +905,69 @@ class QtileConfigGUI(QMainWindow):
             ag.addWidget(le,            row, 1)
         vbox.addWidget(app_box)
 
-        # キー割り当て（Modキーは固定、末尾のキーのみ変更可能）
-        kb_box = QGroupBox("キー割り当て  ※ Mod = Super/Windowsキー")
-        kg = QGridLayout(kb_box)
-        kg.setColumnStretch(2, 1)
-
-        KB_ITEMS = [
-            ("launcher_key",      "Mod +",       "ランチャー (rofi)",    "d"),
-            ("browser_key",       "Mod +",       "ブラウザ",             "w"),
-            ("lock_key",          "Mod+Shift +", "画面ロック",           "x"),
-            ("power_menu_key",    "Mod+Shift +", "電源メニュー",         "p"),
-            ("close_window_key",  "Mod+Shift +", "ウィンドウを閉じる",   "q"),
-            ("reload_config_key", "Mod+Shift +", "設定リロード",         "c"),
+        # ── キーバインドグループ ─────────────────────────────────────────
+        # (action_key, 日本語ラベル)
+        KB_GROUPS = [
+            ("アプリ起動", [
+                ("terminal",          "ターミナル"),
+                ("launcher",          "アプリランチャー (rofi)"),
+                ("browser",           "ブラウザ"),
+                ("menu",              "Qtile メニュー"),
+                ("workspace_preview", "ワークスペース一覧"),
+            ]),
+            ("ウィンドウ操作", [
+                ("close_window",      "ウィンドウを閉じる"),
+                ("toggle_floating",   "フローティング切替"),
+                ("toggle_fullscreen", "フルスクリーン切替"),
+                ("next_layout",       "次のレイアウトへ"),
+            ]),
+            ("システム", [
+                ("reload_config", "設定リロード"),
+                ("lock_screen",   "画面ロック"),
+                ("power_menu",    "電源メニュー"),
+            ]),
+            ("スクリーンショット・クリップボード", [
+                ("screenshot_select", "スクリーンショット（選択）"),
+                ("screenshot_full",   "スクリーンショット（全画面）"),
+                ("clipboard",         "クリップボード履歴"),
+            ]),
+            ("ツール", [
+                ("display",    "ディスプレイ設定 (arandr)"),
+                ("wallpaper",  "壁紙設定 (nitrogen)"),
+                ("audio",      "オーディオ設定 (pavucontrol)"),
+                ("cheatsheet", "チートシート"),
+            ]),
+            ("スクラッチパッド", [
+                ("scratchpad_term",  "ターミナル (ドロップダウン)"),
+                ("scratchpad_calc",  "電卓"),
+                ("scratchpad_files", "ファイルマネージャー"),
+            ]),
         ]
-        for row, (key, mod_label, desc, default) in enumerate(KB_ITEMS):
-            mod_lbl = QLabel(mod_label)
-            mod_lbl.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-            mod_lbl.setStyleSheet("color:#a6adc8;")
-            le = QLineEdit(kb.get(key, default))
-            le.setFixedWidth(80)
-            le.setPlaceholderText(default)
-            self._kb_widgets[key] = le
-            kg.addWidget(QLabel(desc), row, 0)
-            kg.addWidget(mod_lbl,      row, 1)
-            kg.addWidget(le,           row, 2)
-        vbox.addWidget(kb_box)
 
-        note = QLabel("※ キーには英数字1文字または Return / space / Tab などを入力してください")
+        for group_title, items in KB_GROUPS:
+            box = QGroupBox(f"キーバインド — {group_title}  ※ Mod = Super/Windowsキー")
+            g = QGridLayout(box)
+            g.setColumnStretch(1, 1)
+            for row, (action, label) in enumerate(items):
+                entry = kb.get(action, {"mods": [], "key": ""})
+                if not isinstance(entry, dict):
+                    entry = {"mods": [], "key": str(entry)}
+                kb_row = KeyBindingRow(entry)
+                self._kb_widgets[action] = kb_row
+                g.addWidget(QLabel(label), row, 0)
+                g.addWidget(kb_row,        row, 1)
+            vbox.addWidget(box)
+
+        note = QLabel(
+            "※ キーには英数字1文字 または Return / space / Tab / Print / grave / slash などを入力してください\n"
+            "※ Mod = Super (Windows) キー"
+        )
         note.setStyleSheet("color:#6c7086; font-size:11px;")
         note.setWordWrap(True)
         vbox.addWidget(note)
         vbox.addStretch()
+
+        outer_vbox.addWidget(scroll)
         return outer
 
     # -----------------------------------------------------------------------
@@ -955,11 +1055,11 @@ class QtileConfigGUI(QMainWindow):
         for key, le in self._app_widgets.items():
             theme["apps"][key] = le.text().strip()
 
-        # キーバインド
+        # キーバインド (新形式 {"mods": [...], "key": "..."})
         if "keybindings" not in theme:
             theme["keybindings"] = {}
-        for key, le in self._kb_widgets.items():
-            theme["keybindings"][key] = le.text().strip()
+        for key, kb_row in self._kb_widgets.items():
+            theme["keybindings"][key] = kb_row.get_value()
 
         return theme
 
@@ -1048,8 +1148,12 @@ class QtileConfigGUI(QMainWindow):
                 le.setText(self.theme.get("apps", {}).get(key, ""))
 
             # キーバインドリセット
-            for key, le in self._kb_widgets.items():
-                le.setText(self.theme.get("keybindings", {}).get(key, ""))
+            kb = self.theme.get("keybindings", {})
+            for key, kb_row in self._kb_widgets.items():
+                entry = kb.get(key, {"mods": [], "key": ""})
+                if not isinstance(entry, dict):
+                    entry = {"mods": [], "key": str(entry)}
+                kb_row.set_value(entry)
 
             self.status.showMessage("リセットしました")
 
