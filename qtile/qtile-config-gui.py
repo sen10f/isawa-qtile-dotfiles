@@ -9,7 +9,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QIcon
 from PyQt6.QtWidgets import (
     QApplication, QCheckBox, QColorDialog, QComboBox, QDoubleSpinBox,
@@ -308,6 +308,25 @@ def make_slider_row(min_val, max_val, value, step=1, is_float=False):
     layout.addWidget(slider, stretch=1)
     layout.addWidget(spin)
     return widget, spin
+
+
+# ---------------------------------------------------------------------------
+# apply_theme.py を別スレッドで実行するワーカー
+# ---------------------------------------------------------------------------
+
+class ApplyWorker(QThread):
+    finished = pyqtSignal(int, str)  # returncode, stderr
+
+    def __init__(self, script: Path):
+        super().__init__()
+        self._script = script
+
+    def run(self):
+        result = subprocess.run(
+            [sys.executable, str(self._script)],
+            capture_output=True, text=True
+        )
+        self.finished.emit(result.returncode, result.stderr)
 
 
 def make_separator():
@@ -674,13 +693,13 @@ class QtileConfigGUI(QMainWindow):
         reset_btn.setObjectName("resetBtn")
         reset_btn.clicked.connect(self._on_reset)
 
-        apply_btn = QPushButton("保存して適用")
-        apply_btn.setObjectName("applyBtn")
-        apply_btn.clicked.connect(self._on_apply)
+        self._apply_btn = QPushButton("保存して適用")
+        self._apply_btn.setObjectName("applyBtn")
+        self._apply_btn.clicked.connect(self._on_apply)
 
         hbox.addWidget(reset_btn)
         hbox.addStretch()
-        hbox.addWidget(apply_btn)
+        hbox.addWidget(self._apply_btn)
         return hbox
 
     # -----------------------------------------------------------------------
@@ -700,11 +719,21 @@ class QtileConfigGUI(QMainWindow):
             else:
                 theme["colors"][key] = btn.get_color()
 
-        # スピンボックス / スライダー
+        # スピンボックス / チェックボックス / _widgets 内のカラーボタン
         for key, widget in self._widgets.items():
-            if isinstance(widget, (QSpinBox, QDoubleSpinBox)):
+            parts = key.split(".")
+
+            if isinstance(widget, ColorButton):
+                # urgency別など _color_buttons に登録されていないカラーボタン
+                val = widget.get_color()
+                if parts[0] == "dunst":
+                    if len(parts) == 3:
+                        theme["dunst"][parts[1]][parts[2]] = val
+                    else:
+                        theme["dunst"][parts[1]] = val
+
+            elif isinstance(widget, (QSpinBox, QDoubleSpinBox)):
                 val = widget.value()
-                parts = key.split(".")
                 if parts[0] == "layout":
                     theme["layout"][parts[1]] = val
                 elif parts[0] == "bar":
@@ -721,14 +750,10 @@ class QtileConfigGUI(QMainWindow):
 
             elif isinstance(widget, QCheckBox):
                 val = widget.isChecked()
-                parts = key.split(".")
                 if parts[0] == "flag":
                     theme[parts[1]] = val
                 elif parts[0] == "picom":
                     theme["picom"][parts[1]] = val
-
-            elif isinstance(widget, ColorButton):
-                pass  # 上のカラーループで処理済み
 
         return theme
 
@@ -740,20 +765,27 @@ class QtileConfigGUI(QMainWindow):
             json.dumps(theme, indent=2, ensure_ascii=False)
         )
         self.theme = theme
-        self.status.showMessage("theme.json を保存しました。適用中...")
-        QApplication.processEvents()
 
-        # apply_theme.py を実行
-        result = subprocess.run(
-            [sys.executable, str(APPLY_SCRIPT)],
-            capture_output=True, text=True
-        )
-        if result.returncode == 0:
+        # ボタンを無効化してフリーズを防ぐ
+        self._apply_btn.setEnabled(False)
+        self._apply_btn.setText("適用中...")
+        self.status.showMessage("theme.json を保存しました。適用中...")
+
+        # apply_theme.py を別スレッドで実行
+        self._worker = ApplyWorker(APPLY_SCRIPT)
+        self._worker.finished.connect(self._on_apply_done)
+        self._worker.start()
+
+    def _on_apply_done(self, returncode: int, stderr: str):
+        self._apply_btn.setEnabled(True)
+        self._apply_btn.setText("保存して適用")
+
+        if returncode == 0:
             self.status.showMessage("適用完了！")
         else:
             QMessageBox.warning(
                 self, "適用エラー",
-                f"apply_theme.py でエラーが発生しました:\n{result.stderr}"
+                f"apply_theme.py でエラーが発生しました:\n{stderr}"
             )
             self.status.showMessage("エラーが発生しました")
 
@@ -772,24 +804,31 @@ class QtileConfigGUI(QMainWindow):
                     btn.set_color(self.theme[parts[0]][parts[1]])
                 else:
                     btn.set_color(self.theme["colors"].get(key, "#ffffff"))
-            # スピンボックスをリセット
+            # _widgets 内のウィジェットをリセット
             for key, widget in self._widgets.items():
-                if not isinstance(widget, (QSpinBox, QDoubleSpinBox)):
-                    continue
                 parts = key.split(".")
-                if parts[0] == "layout":
-                    widget.setValue(self.theme["layout"][parts[1]])
-                elif parts[0] == "bar":
-                    widget.setValue(self.theme["bar"][parts[1]])
-                elif parts[0] == "sc":
-                    widget.setValue(self.theme["scratchpad"][parts[1]][parts[2]])
-                elif parts[0] == "picom":
-                    widget.setValue(self.theme["picom"][parts[1]])
-                elif parts[0] == "dunst":
-                    if len(parts) == 2:
-                        widget.setValue(self.theme["dunst"][parts[1]])
-                    else:
-                        widget.setValue(self.theme["dunst"][parts[1]][parts[2]])
+
+                if isinstance(widget, ColorButton):
+                    if parts[0] == "dunst":
+                        if len(parts) == 3:
+                            widget.set_color(self.theme["dunst"][parts[1]][parts[2]])
+                        else:
+                            widget.set_color(self.theme["dunst"][parts[1]])
+
+                elif isinstance(widget, (QSpinBox, QDoubleSpinBox)):
+                    if parts[0] == "layout":
+                        widget.setValue(self.theme["layout"][parts[1]])
+                    elif parts[0] == "bar":
+                        widget.setValue(self.theme["bar"][parts[1]])
+                    elif parts[0] == "sc":
+                        widget.setValue(self.theme["scratchpad"][parts[1]][parts[2]])
+                    elif parts[0] == "picom":
+                        widget.setValue(self.theme["picom"][parts[1]])
+                    elif parts[0] == "dunst":
+                        if len(parts) == 2:
+                            widget.setValue(self.theme["dunst"][parts[1]])
+                        else:
+                            widget.setValue(self.theme["dunst"][parts[1]][parts[2]])
             self.status.showMessage("リセットしました")
 
 
